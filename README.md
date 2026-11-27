@@ -1,6 +1,6 @@
 # Newsletter
 
-A calm, local-first AI briefing. It reads AI news from dozens of sources, groups coverage of the same event into stories, ties related stories into storylines, and lays them out on a map of the AI stack, from power and chips up to policy, so you can see at a glance what is happening and how big it is.
+A calm, local-first AI briefing. It reads AI news from dozens of sources, groups coverage of the same event into stories, ties related stories into storylines, and shows only the few that matter, each one a doorway into the stories most closely related to it.
 
 All summarizing is done by an open model running through [Ollama](https://ollama.com): on your machine, or on the GitHub runner in the scheduled workflow. No API keys.
 
@@ -16,7 +16,7 @@ All summarizing is done by an open model running through [Ollama](https://ollama
 | `umbrella` | Ties related stories into storylines (embeddings propose, the model confirms it's the same saga) and writes one umbrella explanation per storyline. |
 | `grades` | Grades every outlet on two axes from its last 30 days: **fast** (often first on stories others pick up) and **deep** (source type, plus how many other outlets cite it). Runs probation for discovered sources. |
 | `discover` | Sites that several sources keep citing become candidates: their feed is found automatically, the model checks they're about AI, and they start on probation. |
-| `render` | Writes `output/index.html` with two tabs. **News**: a front page (lead and three seconds), a bubble map of storylines grouped by layer, and the wire. **Models**: a 30-day release timeline, frontier labs and open-weight models side by side, and Hugging Face trending. Every storyline opens a panel with best read, who broke it, momentum, angles and all coverage. |
+| `render` | Writes `output/index.html` with two tabs. **News** works like a set of rooms: the front page shows the handful of biggest stories; stepping into one shows what happened and why, the best source and who broke it, then doors to the most closely related stories (same company, same field, closest topic), each of which opens its own room. A trail at the top leads back. **Models** has two separate panes: **Frontier** (the default), a plain newest-first list of every new closed model from the last 30 days, and **Open source**, open-weight launches from the news plus Hugging Face trending. |
 
 ## Run locally
 

@@ -1,0 +1,5 @@
+feedparser
+httpx
+jinja2
+numpy
+decider-ai[gguf]

@@ -1,0 +1,117 @@
+name: Brief
+
+# 7, 8 and 9 AM, 5 PM and 10 PM New York time. GitHub cron runs in UTC, so there is one line
+# for winter (EST) and one for summer (EDT); the gate step skips whichever is out of season.
+on:
+  schedule:
+    - cron: "7 3,12,13,14,22 * * *"   # EST
+    - cron: "9 2,11,12,13,21 * * *"   # EDT
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: brief
+  cancel-in-progress: false
+
+env:
+  CHAT_MODEL: qwen2.5:7b
+  EMBED_MODEL: nomic-embed-text
+  DECIDER_REPO: Mapika/decider-4b-GGUF
+  DECIDER_FILE: decider-4b-v3-Q4_K_M.gguf
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - name: Gate on daylight saving
+        id: gate
+        run: |
+          zone=$(TZ=America/New_York date +%Z)
+          case "${{ github.event.schedule }}" in
+            "7 3,12,13,14,22 * * *") want=EST ;;
+            "9 2,11,12,13,21 * * *") want=EDT ;;
+            *) want=$zone ;;
+          esac
+          echo "run=$([ "$zone" = "$want" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        # CPU-only PyTorch (the default wheel bundles CUDA, gigabytes we can't use), and prebuilt
+        # CPU wheels for llama.cpp so it isn't compiled from source on every run.
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+
+      - name: Cache the decision model
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ env.DECIDER_REPO }}-${{ env.DECIDER_FILE }}
+
+      - name: Restore database from the data branch
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          mkdir -p data
+          if git fetch --depth 1 origin data; then
+            git show FETCH_HEAD:newsletter.db > data/newsletter.db
+          else
+            echo "No data branch yet, starting fresh"
+          fi
+
+      - name: Start local models
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama || true
+          OLLAMA_MODELS="$HOME/ollama-models" nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:11434/api/version && break; sleep 1; done
+          ollama pull "$EMBED_MODEL"
+          ollama pull "$CHAT_MODEL"
+
+      - name: Build the brief
+        if: steps.gate.outputs.run == 'true'
+        run: python -u -m newsletter
+
+      - name: Save database to the data branch
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          # The branch is always a single commit, so the repo doesn't grow with every run.
+          cd data
+          git init -q -b data
+          git add newsletter.db
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Update data"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.gate.outputs.run == 'true'
+        with:
+          path: output
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

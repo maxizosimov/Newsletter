@@ -97,42 +97,46 @@ DISCOVERY_BLOCKLIST = {
 }
 
 # ---- Models page ----
+# Labs' own posts are kept (and grouped into stories) this long, longer than ordinary news.
 MODELS_WINDOW_DAYS = 30
-MODELS_LIMIT = int(os.environ.get("MODELS_LIMIT", 80))
+# Launch news is searched this far back for every tracked lab; found releases are kept for good,
+# so each lab always shows its latest model even after a quiet stretch.
+LAUNCH_SEARCH_DAYS = 60
 HF_TRENDING_LIMIT = 20
-# Frontier labs always get a lane on the Models page, even in a quiet month.
-FRONTIER_LABS = ["OpenAI", "Anthropic", "Google", "xAI", "Meta", "Mistral"]
-# Spellings the model or news use -> one canonical lab name.
-PROVIDER_ALIASES = {
-    "openai": "OpenAI", "chatgpt": "OpenAI", "anthropic": "Anthropic", "claude": "Anthropic",
-    "google": "Google", "google deepmind": "Google", "deepmind": "Google", "gemini": "Google",
-    "xai": "xAI", "x.ai": "xAI", "grok": "xAI", "spacex": "xAI", "meta": "Meta", "meta ai": "Meta",
-    "facebook": "Meta", "llama": "Meta", "mistral": "Mistral", "mistral ai": "Mistral",
-    "deepseek": "DeepSeek", "alibaba": "Alibaba (Qwen)", "qwen": "Alibaba (Qwen)",
-    "moonshot": "Moonshot (Kimi)", "moonshot ai": "Moonshot (Kimi)", "kimi": "Moonshot (Kimi)",
-    "zhipu": "Zhipu (Z.ai)", "z.ai": "Zhipu (Z.ai)", "glm": "Zhipu (Z.ai)", "minimax": "MiniMax",
-    "nvidia": "NVIDIA", "microsoft": "Microsoft", "amazon": "Amazon", "aws": "Amazon",
-    "apple": "Apple", "cohere": "Cohere", "ai2": "Ai2", "allen institute for ai": "Ai2",
-    "tencent": "Tencent", "baidu": "Baidu", "bytedance": "ByteDance", "xiaomi": "Xiaomi",
-    "ibm": "IBM", "thinking machines": "Thinking Machines", "reflection ai": "Reflection AI",
-    "gdm": "Google", "sber": "Sber", "sberbank": "Sber",
-}
-# Model families say who made a model and whether its weights are open, more reliably than a
-# small model reading the article. Checked in order against the start of the model name.
-MODEL_FAMILIES = [
-    ("gpt-oss", "OpenAI", True), ("gpt", "OpenAI", False), ("o3", "OpenAI", False), ("o4", "OpenAI", False),
-    ("sora", "OpenAI", False), ("claude", "Anthropic", False), ("gemma", "Google", True),
-    ("gemini", "Google", False), ("genie", "Google", False), ("veo", "Google", False), ("imagen", "Google", False),
-    ("grok", "xAI", False), ("llama", "Meta", True), ("mistral large", "Mistral", False),
-    ("mistral medium", "Mistral", False), ("mistral", "Mistral", True), ("magistral", "Mistral", True),
-    ("devstral", "Mistral", True), ("codestral", "Mistral", False), ("qwen", "Alibaba (Qwen)", True),
-    ("wan", "Alibaba (Qwen)", True), ("deepseek", "DeepSeek", True), ("glm", "Zhipu (Z.ai)", True),
-    ("kimi", "Moonshot (Kimi)", True), ("minimax", "MiniMax", True), ("nemotron", "NVIDIA", True),
-    ("cosmos", "NVIDIA", True), ("phi", "Microsoft", True), ("nova", "Amazon", False),
-    ("gigachat", "Sber", False), ("hunyuan", "Tencent", True), ("ernie", "Baidu", True),
-    ("doubao", "ByteDance", False), ("seed", "ByteDance", True), ("olmo", "Ai2", True),
-    ("command", "Cohere", False), ("granite", "IBM", True),
+# Labs whose releases are tracked: the news search for each, who may announce its launches (the lab,
+# its brands, its leaders), its own sites (preferred as the link), and its model families. A family is a name pattern; the version and an optional variant follow it.
+# (family regex, open weights, display prefix)
+LABS = [
+    {"name": "OpenAI", "who": ["OpenAI", "ChatGPT", "Altman"], "search": "OpenAI", "sites": ["openai.com"],
+     "families": [(r"GPT-oss", True, ""), (r"GPT", False, ""), (r"Sora", False, "")]},
+    {"name": "Anthropic", "who": ["Anthropic", "Claude", "Amodei"], "search": "Anthropic OR Claude", "sites": ["anthropic.com", "claude.com"],
+     "families": [(r"(?:Claude\s+)?(?:Fable|Mythos|Opus|Sonnet|Haiku)", False, "Claude "), (r"Claude", False, "")]},
+    {"name": "Google", "who": ["Google", "DeepMind", "Gemini", "Pichai", "Hassabis"], "search": "Gemini OR DeepMind OR Gemma", "sites": ["blog.google", "deepmind.google", "googleblog.com"],
+     "families": [(r"Gemma", True, ""), (r"Gemini", False, ""), (r"Veo", False, ""), (r"Imagen", False, ""), (r"Genie", False, "")]},
+    {"name": "xAI", "who": ["xAI", "Grok", "Musk", "SpaceX"], "search": "xAI OR Grok", "sites": ["x.ai"], "families": [(r"Grok\s+Voice", False, ""), (r"Grok", False, "")]},
+    {"name": "Meta", "who": ["Meta", "Zuckerberg", "Llama"], "search": "Meta Llama OR \"Meta AI\"", "sites": ["ai.meta.com", "about.fb.com"],
+     "families": [(r"Llama", True, "")]},
+    {"name": "Mistral", "who": ["Mistral"], "search": "\"Mistral AI\" OR Mistral", "sites": ["mistral.ai"],
+     "families": [(r"Mistral\s+(?:Large|Medium)", False, ""), (r"Mistral(?:\s+Small)?", True, ""),
+                  (r"Magistral", True, ""), (r"Devstral", True, ""), (r"Codestral", False, "")]},
+    {"name": "DeepSeek", "who": ["DeepSeek"], "search": "DeepSeek", "sites": ["deepseek.com"], "families": [(r"DeepSeek", True, "")]},
+    {"name": "Alibaba (Qwen)", "who": ["Alibaba", "Qwen"], "closed_variants": ["Max"], "search": "Qwen OR \"Alibaba AI\"", "sites": ["qwenlm.github.io", "alibabacloud.com"],
+     "families": [(r"Qwen", True, ""), (r"Wan", True, "")]},
+    {"name": "Moonshot (Kimi)", "who": ["Moonshot", "Kimi"], "search": "Kimi OR \"Moonshot AI\"", "sites": ["moonshot.ai", "moonshot.cn"],
+     "families": [(r"Kimi", True, "")]},
+    {"name": "Zhipu (Z.ai)", "who": ["Zhipu", "Z.ai", "GLM"], "search": "Zhipu OR GLM OR \"Z.ai\"", "sites": ["z.ai", "zhipuai.cn"],
+     "families": [(r"GLM", True, "")]},
+    {"name": "MiniMax", "who": ["MiniMax"], "search": "MiniMax", "sites": ["minimax.io", "minimaxi.com"], "families": [(r"MiniMax", True, "")]},
+    {"name": "NVIDIA", "who": ["Nvidia", "Huang", "Nemotron"], "search": "Nvidia Nemotron OR Cosmos", "sites": ["nvidia.com"],
+     "families": [(r"Nemotron", True, ""), (r"Cosmos", True, "")]},
+    {"name": "Microsoft", "who": ["Microsoft", "Nadella", "Suleyman"], "search": "Microsoft Phi OR \"Microsoft AI\" model", "sites": ["microsoft.com"],
+     "families": [(r"Phi", True, ""), (r"MAI", False, "")]},
 ]
+# Words that may follow a version as part of a model's name ("Gemini 4 Pro", "GPT-6.2 Astra").
+MODEL_VARIANTS = ["Pro", "Flash-Lite", "Flash", "Mini", "Nano", "Ultra", "Max", "Lite", "Turbo", "Air",
+                  "Thinking", "Instant", "Plus", "Codex", "Coder", "Omni", "Vision", "Fast", "Heavy",
+                  "Preview", "Exp", "Super", "Maverick", "Scout", "Behemoth", "Neon", "Carbon", "Astra",
+                  "Sol", "Cyber", "Large", "Medium", "Small", "Reasoner", "Agent"]
 # Where a lab or Hugging Face org is based, for the open-weights pane.
 COUNTRY = {
     "OpenAI": "US", "Anthropic": "US", "Google": "US", "xAI": "US", "Meta": "US", "Mistral": "FR",

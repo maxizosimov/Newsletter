@@ -118,6 +118,10 @@ details.more summary:hover { color: var(--ink); }
 .deeper-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
 .deeper-h h2 { margin: 0; font: 500 italic 24px/1.1 Newsreader, Georgia, serif; color: var(--ink-2); }
 .deeper-h span { font-size: 12px; color: var(--faint); }
+.more-stories { display: flex; justify-content: center; gap: 8px; align-items: baseline; width: 100%; padding: 18px 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.more-stories:hover { color: var(--ink); }
+.more-stories small { font-size: 12px; color: var(--faint); }
+.stream-end { text-align: center; padding: 18px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--faint); margin: 0; }
 .portals { list-style: none; margin: 0; padding: 0; counter-reset: p; }
 .portal { position: relative; display: grid; grid-template-columns: 34px 1fr auto; gap: 4px 16px; align-items: baseline; width: 100%;
   padding: 20px 0 20px; border-top: 1px solid var(--line); counter-increment: p; transition: padding .2s ease; }
@@ -153,39 +157,43 @@ details.more summary:hover { color: var(--ink); }
 .keys { font-size: 12px; color: var(--faint); }
 .keys kbd { font: 500 11px/1 Inter, sans-serif; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 2px 5px; color: var(--muted); }
 
-/* ---------- Models: two separate panes, Frontier first ---------- */
+/* ---------- Models: one block per lab, newest release first ---------- */
 .models-wrap { max-width: 760px; margin: 0 auto; padding: 44px 24px 90px; }
-.switch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--raised); margin-top: 26px; }
-.switch a { padding: 8px 18px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--muted); display: inline-flex; gap: 8px; align-items: baseline; }
-.switch a:hover { color: var(--ink); }
-.switch a[aria-current="page"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.switch small { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
-.mlist { list-style: none; margin: 30px 0 0; padding: 0; }
-.mrow { display: grid; grid-template-columns: 64px 1fr auto; gap: 4px 16px; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--line); transition: padding .2s; }
-.mlist li:first-child .mrow { border-top-color: var(--line-2); }
-.mrow:hover { padding-left: 6px; }
-.mrow .when { font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
-.mrow .who { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
-.mrow .name { display: block; font: 600 25px/1.15 Newsreader, Georgia, serif; letter-spacing: -0.012em; margin-top: 3px; }
-.mrow .what { display: block; font-size: 14px; color: var(--muted); margin-top: 4px; }
-.mrow .side { font-size: 12px; color: var(--faint); text-align: right; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.mrow .go { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; color: var(--muted); font-size: 15px; transition: background .2s, color .2s, border-color .2s; }
-.mrow:hover .go { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.mrow.hf .name { font-size: 20px; }
-.mrow.hf .when { font: 500 18px/1 Newsreader, Georgia, serif; color: var(--faint); }
-.mrow.extra { display: none; } .all .mrow.extra { display: grid; }
-.mhead { display: flex; justify-content: space-between; align-items: baseline; margin-top: 48px; }
-.mhead h2 { margin: 0; font: 500 italic 24px/1.1 Newsreader, Georgia, serif; color: var(--ink-2); }
-.mhead span { font-size: 12px; color: var(--faint); }
-.mhead + .mlist { margin-top: 10px; }
-.quiet-labs { margin-top: 22px; font-size: 13px; color: var(--faint); }
+.newsum { margin-top: 22px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--open) 12%, transparent); color: var(--open); font-size: 13.5px; font-weight: 600; }
+.newsum::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--open); }
+.lab { margin-top: 40px; }
+.lab-h { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); }
+.lab-h h2 { margin: 0; font: 600 26px/1.1 Newsreader, Georgia, serif; letter-spacing: -0.01em; }
+.lab-h .kind { font-size: 12px; color: var(--muted); }
+.lab-h .latest { margin-left: auto; font-size: 12.5px; color: var(--faint); white-space: nowrap; }
+.rel { display: grid; grid-template-columns: 62px 1fr auto; gap: 2px 16px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--line); transition: padding .2s; }
+.rel:hover { padding-left: 6px; }
+.rel .when { font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.rel .name { font: 600 21px/1.2 Newsreader, Georgia, serif; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rel:first-of-type .name { font-size: 25px; }
+.rel .hl { display: block; font-size: 13.5px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rel .side { font-size: 12px; color: var(--faint); white-space: nowrap; text-align: right; }
+.rel.older { display: none; } .lab.all .rel.older { display: grid; }
+.ow { font: 600 10.5px/1 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--open); border: 1px solid color-mix(in srgb, var(--open) 40%, transparent); border-radius: 4px; padding: 3px 5px; }
+.newtag { font: 700 10.5px/1 Inter, sans-serif; letter-spacing: .08em; color: #fff; background: var(--open); border-radius: 4px; padding: 4px 6px; }
+@media (prefers-color-scheme: dark) { .newtag { color: #08130f; } }
+.morebtn { padding: 10px 0; font-size: 13px; color: var(--muted); }
+.morebtn:hover { color: var(--ink); }
+.quietlab { margin-top: 40px; font-size: 13px; color: var(--faint); }
 .cc { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; padding: 1px 5px; border-radius: 4px; background: var(--raised); color: var(--muted); }
 .cc.CN { background: color-mix(in srgb, #d23 14%, var(--paper)); color: #c0262d; }
 @media (prefers-color-scheme: dark) { .cc.CN { color: #ff8a8a; } }
-.new { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--open); }
-.morebtn { margin-top: 6px; width: 100%; padding: 14px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); text-align: center; }
-.morebtn:hover { color: var(--ink); }
-.empty { padding: 18px 0; color: var(--faint); font-size: 14px; border-top: 1px solid var(--line); }
+details.hf { margin-top: 56px; border-top: 1px solid var(--line-2); }
+details.hf summary { cursor: pointer; list-style: none; padding: 16px 0; display: flex; justify-content: space-between; align-items: baseline; }
+details.hf summary::-webkit-details-marker { display: none; }
+details.hf summary b { font: 500 italic 22px/1.1 Newsreader, Georgia, serif; color: var(--ink-2); }
+details.hf summary span { font-size: 12.5px; color: var(--faint); }
+.hfrow { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.hfrow .r { font: 500 15px/1 Newsreader, Georgia, serif; color: var(--faint); }
+.hfrow .n { font-weight: 600; }
+.hfrow small { color: var(--muted); margin-left: 6px; }
+.hfrow .side { font-size: 12px; color: var(--faint); }
+.nav .count { display: inline-grid; place-items: center; min-width: 17px; height: 17px; margin-left: 6px; padding: 0 5px; border-radius: 999px; background: var(--open); color: #fff; font-size: 10.5px; font-weight: 700; vertical-align: 1px; }
 .view[hidden] { display: none; }
 
 @media (max-width: 560px) {
@@ -197,9 +205,8 @@ details.more summary:hover { color: var(--ink); }
   .p-k { font-size: 22px; }
   .story-why { font-size: 19px; }
   .cov li { grid-template-columns: 1fr; gap: 0; }
-  .mrow { grid-template-columns: 52px 1fr; }
-  .mrow .side { display: none; }
-  .mrow .name { font-size: 22px; }
+  .rel { grid-template-columns: 52px 1fr; }
+  .rel .side, .lab-h .latest { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -254,7 +261,7 @@ details.more summary:hover { color: var(--ink); }
   // "#/" is the front page, "#/L:chips" a field, "#/L:chips/12/-40" stories reached from there.
   const parse = () => {
     const h = location.hash;
-    if (h.startsWith("#models")) return { view: "models", pane: h === "#models/open" ? "open" : "frontier", path: [] };
+    if (h.startsWith("#models")) return { view: "models", path: [] };
     return { view: "news", path: h.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent) };
   };
   const href = path => "#/" + path.map(encodeURIComponent).join("/");
@@ -279,6 +286,30 @@ details.more summary:hover { color: var(--ink); }
   }
   const portals = (list, path, whyOf, lead) => `<ol class="portals">${list.map((s, i) => portal(s, path, { why: whyOf?.(s), lead: lead && i === 0 })).join("")}</ol>`;
 
+  // An endless list: the first few doors, then more as you scroll, until every story is reachable.
+  // Each room hands over its queue ({s, why}); the page keeps one stream for the room on screen.
+  const STEP = 6;
+  let stream = null;
+  const unseenFirst = list => [...list].sort((a, b) => seen.has(String(a.s.id)) - seen.has(String(b.s.id)));
+  function endless(queue, path, first, lead) {
+    stream = { queue, path, shown: Math.min(first, queue.length) };
+    return `<ol class="portals" id="stream">${queue.slice(0, stream.shown).map((q, i) => portal(q.s, path, { why: q.why, lead: lead && i === 0 })).join("")}</ol>${moreButton()}`;
+  }
+  const moreButton = () => stream.shown < stream.queue.length
+    ? `<button class="more-stories" id="more-stories">More stories <small>${stream.queue.length - stream.shown} left</small></button>` : "";
+  function more() {
+    if (!stream || stream.shown >= stream.queue.length) return;
+    const next = stream.queue.slice(stream.shown, stream.shown + STEP);
+    stream.shown += next.length;
+    $("stream").insertAdjacentHTML("beforeend", next.map(q => portal(q.s, stream.path, { why: q.why })).join(""));
+    $("more-stories").outerHTML = moreButton() || `<p class="stream-end">That's everything from the last ${D.window_hours / 24} days.</p>`;
+    watchMore();
+  }
+  // Scrolling near the end loads the next few; the button works too.
+  const moreObserver = "IntersectionObserver" in window ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) more(); }, { rootMargin: "300px" }) : null;
+  function watchMore() { moreObserver?.disconnect(); const b = $("more-stories"); if (b && moreObserver) moreObserver.observe(b); }
+  document.addEventListener("click", e => { if (e.target.closest("#more-stories")) more(); });
+
   // ---------- Rooms ----------
   function frontRoom() {
     const hr = generated.getHours();
@@ -291,7 +322,7 @@ details.more summary:hover { color: var(--ink); }
         <div class="eyebrow">${generated.toLocaleDateString([], {weekday: "long", month: "long", day: "numeric"})}</div>
         <h1 class="hello">${["One", "Two", "Three", "Four", "Five", "Six", "Seven"][top.length - 1] || top.length} things this ${part}. <em>Step into any of them.</em></h1>
         <p class="room-sub">${S.length} storylines from ${D.sources.outlets} outlets${D.filtered ? `, ${D.filtered} more skipped as noise` : ""}.</p>
-        <section class="deeper" style="margin-top:34px">${portals(top, [], null, true)}</section>
+        <section class="deeper" style="margin-top:34px">${endless(S.map(s => ({ s })), [], FRONT, true)}</section>
         <section class="fields"><span class="eyebrow">Or enter through a part of the stack</span>
           <div class="fields-list">${fields.map(l => `<a class="field" href="${href(["L:" + l.key])}" style="--c:${color(l.key)}">${esc(l.name)}<small>${l.n}</small></a>`).join("")}</div>
         </section>
@@ -302,7 +333,7 @@ details.more summary:hover { color: var(--ink); }
 
   function fieldRoom(key, path) {
     const l = LAYER[key];
-    const list = S.filter(s => s.layer === key).slice(0, 8);
+    const list = S.filter(s => s.layer === key);
     const others = D.layers.filter(o => o.key !== key && S.some(s => s.layer === o.key));
     return {
       glow: key,
@@ -310,7 +341,7 @@ details.more summary:hover { color: var(--ink); }
         <div class="eyebrow" style="color:${color(key)}">Part of the stack</div>
         <h1 class="hello">${esc(l?.name || key)}</h1>
         <p class="room-sub">${esc(l?.hint || "")}</p>
-        <section class="deeper" style="margin-top:34px">${portals(list, path, null, true)}</section>
+        <section class="deeper" style="margin-top:34px">${endless(list.map(s => ({ s })), path, 8, true)}</section>
         <section class="fields"><span class="eyebrow">Next door</span>
           <div class="fields-list">${others.map(o => `<a class="field" href="${href(["L:" + o.key])}" style="--c:${color(o.key)}">${esc(o.name)}</a>`).join("")}</div>
         </section>`,
@@ -323,7 +354,15 @@ details.more summary:hover { color: var(--ink); }
     const doors = s.doors.filter(d => !onPath.has(String(d.id)) && byId[d.id]);
     // Unvisited doors first, so every step offers something new; visited ones stay reachable.
     doors.sort((a, b) => seen.has(String(a.id)) - seen.has(String(b.id)));
-    const why = Object.fromEntries(doors.map(d => [String(d.id), d.why]));
+    // The closest stories first; after them the rest of today, same part of the stack first, so
+    // there is always somewhere else to go.
+    const taken = new Set([String(s.id), ...path, ...doors.map(d => String(d.id))]);
+    const rest = S.filter(o => !taken.has(String(o.id)));
+    const queue = [
+      ...doors.map(d => ({ s: byId[d.id], why: d.why })),
+      ...unseenFirst(rest.filter(o => o.layer === s.layer).map(o => ({ s: o, why: `More in ${LAYER[o.layer]?.name || o.layer}` }))),
+      ...unseenFirst(rest.filter(o => o.layer !== s.layer).map(o => ({ s: o, why: "Also today" }))),
+    ];
     const max = Math.max(1, ...s.momentum);
     const spark = `<span class="spark" title="Outlets joining, ${D.bucket_hours}h slots">${s.momentum.map((v, i) => `<i class="${i >= s.momentum.length - 2 ? "now" : ""}" style="height:${Math.max(1, v / max * 16)}px"></i>`).join("")}</span>`;
     return {
@@ -341,9 +380,9 @@ details.more summary:hover { color: var(--ink); }
         ${s.angles.length > 1 ? `<details class="more"><summary>${s.angles.length} angles on this</summary>${s.angles.map(a => `
           <a class="angle" href="${esc(a.best.url)}" target="_blank" rel="noopener"><b>${esc(a.kicker)}</b><p>${esc(a.summary)}</p><span>${outlets(a.outlets)} · read at ${esc(a.best.publisher)}</span></a>`).join("")}</details>` : ""}
         <details class="more"><summary>All coverage (${s.coverage.length})</summary><ul class="cov">${s.coverage.map(c => `<li><span class="p">${esc(c.publisher)}</span><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a></li>`).join("")}</ul></details>
-        ${doors.length ? `<section class="deeper"><div class="deeper-h"><h2>Go deeper</h2><span>${doors.length} connected</span></div>
-          ${portals(doors.map(d => byId[d.id]), path, x => why[String(x.id)])}</section>` : ""}
-        <div class="foot"><span class="keys"><kbd>1</kbd>–<kbd>${Math.max(1, doors.length)}</kbd> go deeper · <kbd>Esc</kbd> step back</span></div>`,
+        ${queue.length ? `<section class="deeper"><div class="deeper-h"><h2>Go deeper</h2><span>${doors.length} closely connected</span></div>
+          ${endless(queue, path, Math.max(5, Math.min(doors.length, 8)), false)}</section>` : ""}
+        <div class="foot"><span class="keys"><kbd>1</kbd>–<kbd>9</kbd> go deeper · <kbd>Esc</kbd> step back</span></div>`,
     };
   }
 
@@ -367,8 +406,8 @@ details.more summary:hover { color: var(--ink); }
     const first = !current || current.view !== "news" || state.view !== "news";
     current = state;
     if (state.view !== "news") {
-      renderModels(state.pane);
-      document.documentElement.style.setProperty("--glow", state.pane === "open" ? "var(--open)" : "var(--ink)");
+      renderModels();
+      document.documentElement.style.setProperty("--glow", "var(--open)");
       $("ambient").style.setProperty("--glow-k", "10");
       window.scrollTo({ top: 0 });
       return;
@@ -384,6 +423,7 @@ details.more summary:hover { color: var(--ink); }
       void room.offsetWidth;
       room.classList.add(state.path.length >= prevDepth ? "in-in" : "in-up");
       room.querySelector("h1")?.focus?.({ preventScroll: true });
+      watchMore();
     };
     clearTimeout(busy);
     if (first || matchMedia("(prefers-reduced-motion: reduce)").matches) return paint();
@@ -404,39 +444,49 @@ details.more summary:hover { color: var(--ink); }
     }
   });
 
-  // ---------- Models: Frontier and Open source, one at a time ----------
+  // ---------- Models: every tracked lab, its releases newest first ----------
+  // A release stays marked NEW until you've opened this page once after it appeared. On a first
+  // visit, only the last seven days count as new.
   const cc = c => c ? `<span class="cc ${c}">${c}</span>` : "";
   const day = t => toDate(t).toLocaleDateString([], {month: "short", day: "numeric"});
-  const closed = M.timeline.filter(m => !m.open);
-  const open = M.timeline.filter(m => m.open);
-  const row = m => `<li><a class="mrow" href="${esc(m.url)}" target="_blank" rel="noopener">
-      <span class="when">${day(m.date)}</span>
-      <span><span class="who">${esc(m.provider)}${cc(m.country)}</span><span class="name">${esc(m.model)}</span>${m.what ? `<span class="what">${esc(m.what)}</span>` : ""}</span>
-      <span class="side"><span>${outlets(m.outlets)}</span><span class="go" aria-hidden="true">→</span></span></a></li>`;
-  function renderModels(pane) {
-    const fresh = t => t.created && (Date.now() - toDate(t.created)) < 14 * 864e5;
-    const quiet = M.frontier.filter(l => !l.releases.length).map(l => l.lab);
-    const body = pane === "open" ? `
-      ${open.length ? `<ol class="mlist">${open.map(row).join("")}</ol>` : `<p class="empty">No open-weight launches in the news in the last ${M.window_days} days.</p>`}
-      <div class="mhead"><h2>Trending on Hugging Face</h2><span>what developers are downloading now</span></div>
-      <ol class="mlist" id="hf">${M.trending.map((t, i) => `<li><a class="mrow hf ${i >= 10 ? "extra" : ""}" href="https://huggingface.co/${esc(t.id)}" target="_blank" rel="noopener">
-        <span class="when">${t.rank}</span>
-        <span><span class="who">${esc(t.org)}${cc(t.country)}${fresh(t) ? `<span class="new">NEW</span>` : ""}</span><span class="name">${esc(t.name)}</span>${t.task ? `<span class="what">${esc(t.task.replace(/-/g, " "))}</span>` : ""}</span>
-        <span class="side"><span>♥ ${fmt(t.likes)}</span><span class="go" aria-hidden="true">→</span></span></a></li>`).join("")}</ol>
-      ${M.trending.length > 10 ? `<button class="morebtn" id="more-hf">Show ${M.trending.length - 10} more</button>` : ""}`
-    : `
-      ${closed.length ? `<ol class="mlist">${closed.map(row).join("")}</ol>` : `<p class="empty">No new frontier models in the last ${M.window_days} days.</p>`}
-      ${quiet.length ? `<p class="quiet-labs">Nothing new from ${quiet.join(", ").replace(/, ([^,]*)$/, " or $1")} in ${M.window_days} days.</p>` : ""}`;
+  const allReleases = M.labs.flatMap(l => l.releases);
+  let seenModels = null;
+  try { const raw = localStorage.getItem("seenModels"); if (raw) seenModels = new Set(JSON.parse(raw)); } catch {}
+  const isNew = m => seenModels ? !seenModels.has(m.key) : (Date.now() - toDate(m.date)) < 7 * 864e5;
+  const fresh = allReleases.filter(isNew);
+  if (fresh.length) $("nav-models").insertAdjacentHTML("beforeend", `<span class="count" id="models-count">${fresh.length}</span>`);
+
+  function renderModels() {
+    const shown = new Set(fresh.map(m => m.key));
+    const active = M.labs.filter(l => l.releases.length), quiet = M.labs.filter(l => !l.releases.length);
+    const rel = (m, i) => `<a class="rel ${i >= 3 ? "older" : ""}" href="${esc(m.url)}" target="_blank" rel="noopener">
+        <span class="when">${day(m.date)}</span>
+        <span style="min-width:0"><span class="name">${esc(m.model)}${shown.has(m.key) ? `<span class="newtag">NEW</span>` : ""}${m.open ? `<span class="ow">open weights</span>` : ""}</span>
+          <span class="hl">${esc(m.headline)}</span></span>
+        <span class="side">${esc(m.source)}${m.outlets > 1 ? ` · ${outlets(m.outlets)}` : ""}</span></a>`;
     $("models-room").innerHTML = `
-      <div class="eyebrow">Last ${M.window_days} days</div>
-      <h1 class="hello">New models</h1>
-      <p class="room-sub">${pane === "open" ? "Weights anyone can download and run, newest first." : "Closed models from the big labs, API and apps only, newest first."}</p>
-      <nav class="switch" aria-label="Kind of model">
-        <a href="#models" ${pane !== "open" ? 'aria-current="page"' : ""}>Frontier <small>${closed.length}</small></a>
-        <a href="#models/open" ${pane === "open" ? 'aria-current="page"' : ""}>Open source <small>${open.length + M.trending.length}</small></a>
-      </nav>${body}`;
-    $("more-hf")?.addEventListener("click", e => { $("hf").classList.add("all"); e.currentTarget.remove(); });
+      <div class="eyebrow">Model releases</div>
+      <h1 class="hello">What the labs shipped</h1>
+      <p class="room-sub">Every lab we track, newest release first. Found in launch coverage from the last ${M.search_days} days and kept from then on.</p>
+      ${fresh.length ? `<div class="newsum">${fresh.length} new since your last visit: ${fresh.slice(0, 3).map(m => esc(m.model)).join(", ")}${fresh.length > 3 ? "…" : ""}</div>` : ""}
+      ${active.map(l => `<section class="lab">
+        <div class="lab-h"><h2>${esc(l.lab)}</h2>${cc(l.country)}<span class="kind">${l.open ? "open weights" : ""}</span><span class="latest">latest ${ago(l.releases[0].date)}</span></div>
+        ${l.releases.map(rel).join("")}
+        ${l.releases.length > 3 ? `<button class="morebtn" data-more>+ ${l.releases.length - 3} earlier</button>` : ""}
+      </section>`).join("")}
+      ${quiet.length ? `<p class="quietlab">No releases found yet for ${quiet.map(l => esc(l.lab)).join(", ")}.</p>` : ""}
+      <details class="hf"><summary><b>Trending on Hugging Face</b><span>${M.trending.length} models developers are downloading now</span></summary>
+        ${M.trending.map(t => `<a class="hfrow" href="https://huggingface.co/${esc(t.id)}" target="_blank" rel="noopener">
+          <span class="r">${t.rank}</span><span><span class="n">${esc(t.name)}</span><small>${esc(t.org)}</small> ${cc(t.country)}</span><span class="side">♥ ${fmt(t.likes)}</span></a>`).join("")}
+      </details>`;
+    // Opening this page counts as having seen everything on it; the NEW marks stay until you leave.
+    try { localStorage.setItem("seenModels", JSON.stringify(allReleases.map(m => m.key))); } catch {}
+    $("models-count")?.remove();
   }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-more]"); if (!b) return;
+    b.closest(".lab").classList.add("all"); b.remove();
+  });
 
   go(parse());
 })();

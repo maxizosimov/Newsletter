@@ -85,17 +85,20 @@ CREATE TABLE IF NOT EXISTS outlets (
     cited_by INTEGER NOT NULL,
     updated TEXT NOT NULL
 );
--- Model launches pulled out of release stories, for the Models page.
-CREATE TABLE IF NOT EXISTS releases (
-    story_id INTEGER PRIMARY KEY REFERENCES stories(id) ON DELETE CASCADE,
-    is_model INTEGER NOT NULL,
-    provider TEXT,
-    model TEXT,
-    open_weights INTEGER,
-    modality TEXT,
-    what TEXT,
-    checked_n INTEGER NOT NULL
+-- Every headline that announces a model launch, found by the release tracker. Kept for good.
+CREATE TABLE IF NOT EXISTS launches (
+    url TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    model_key TEXT NOT NULL,
+    open_weights INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    publisher TEXT,
+    domain TEXT,
+    published TEXT NOT NULL,
+    PRIMARY KEY (url, provider, model_key)
 );
+CREATE INDEX IF NOT EXISTS launches_model ON launches (provider, model_key);
 -- Latest snapshot of Hugging Face's trending models, minus quantized re-uploads.
 CREATE TABLE IF NOT EXISTS hf_trending (
     rank INTEGER PRIMARY KEY,

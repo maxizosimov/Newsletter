@@ -1,15 +1,46 @@
 """Turn the database into the data the page shows: storylines, their angles, momentum and sources."""
 
 import math
+import re
 import sqlite3
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import numpy as np
+
 from . import config
+from .db import from_blob
 from .ingest import now_utc
 from .triage import passes
 
 BUCKET_HOURS = 6
+# Each storyline links to this many others, the closest first, so the reader can keep going deeper.
+DOORS = 6
+DOORS_MIN = 4
+# Below this similarity a link is only offered when it shares a named company, person or product.
+# Measured after removing what all of today's stories have in common ("it's AI news").
+DOOR_MIN_SIM = 0.30
+DOOR_NAME_MIN_SIM = 0.10
+
+NAME_RE = re.compile(r"\b[A-Z][A-Za-z0-9]*(?:[-.][A-Za-z0-9]+)*\b")
+NOT_NAMES = {
+    "AI", "The", "A", "An", "And", "Of", "In", "On", "For", "To", "With", "New", "How", "Why", "What",
+    "Is", "Are", "As", "At", "By", "From", "Its", "It", "After", "Over", "Into", "More", "Than", "Says",
+    "Report", "First", "Big", "Tech", "US", "U.S", "CEO", "Inc", "Model", "Models", "Data", "Open",
+}
+
+
+SENTENCE_START_RE = re.compile(r"(?:^|[.!?:]\s+|\s[-\u2014]\s)([A-Z][A-Za-z0-9]*)")
+
+
+def names_in(text: str) -> set[str]:
+    """Companies, people and products named in sentence-case text, a cheap stand-in for entities.
+    A capitalised word only counts when it isn't just starting a sentence."""
+    text = text or ""
+    starts = {m.start(1) for m in SENTENCE_START_RE.finditer(text)}
+    return {m.group() for m in NAME_RE.finditer(text)
+            if m.start() not in starts and m.group() not in NOT_NAMES and len(m.group()) > 1
+            and not m.group().startswith("AI-")}
 
 
 def coverage_bonus(n_outlets: int) -> int:
@@ -98,7 +129,13 @@ def build(conn: sqlite3.Connection) -> dict:
         layer_votes = defaultdict(int)
         for m in members:
             layer_votes[m["row"]["layer"]] += len(m["domains"])
+        vecs = [from_blob(m["row"]["centroid"]) for m in members if m["row"]["centroid"]]
+        vec = np.mean(vecs, axis=0) if vecs else None
+        text = " ".join(m["row"]["summary"] or "" for m in members)
         result.append({
+            "_vec": vec / (np.linalg.norm(vec) or 1) if vec is not None else None,
+            "_names": names_in(text + " " + ((u["why"] or "") if written else "")),
+            "_title_words": set(NAME_RE.findall(" ".join(m["row"]["kicker"] or "" for m in members))),
             "id": uid,
             "kicker": (u["kicker"] if written else lead["kicker"]) or lead["headline"],
             "headline": (u["headline"] if written else lead["headline"]) or "",
@@ -133,6 +170,7 @@ def build(conn: sqlite3.Connection) -> dict:
         r["heat"] = round((r["size"] + 0.5 * math.log2(1 + r["outlets"]) + 0.3 * min(r["rising"], 10)) * r.pop("_fresh"), 3)
         del r["_score"]
     result.sort(key=lambda r: r["heat"], reverse=True)
+    link_doors(result)
 
     models = build_models(conn, outlets)
     triaged = conn.execute("SELECT COUNT(*) FROM stories WHERE last_seen >= ? AND triaged_n > 0",
@@ -161,6 +199,53 @@ def build(conn: sqlite3.Connection) -> dict:
             "outlets": len({c["publisher"] for s in result for c in s["coverage"]}),
         },
     }
+
+
+def link_doors(storylines: list[dict]) -> None:
+    """Give every storyline its closest neighbours, each with a short reason for the link."""
+    # Headlines are in Title Case, so a capitalised headline word only counts as a name when some
+    # summary also uses it as one.
+    known = set().union(*(s["_names"] for s in storylines)) if storylines else set()
+    for s in storylines:
+        s["_names"] |= s.pop("_title_words") & known
+    # Every story is AI news, so raw similarities are all high and a few broad stories look close to
+    # everything. Subtracting the shared direction leaves what makes each story itself.
+    with_vec = [s for s in storylines if s["_vec"] is not None]
+    if with_vec:
+        mean = np.mean([s["_vec"] for s in with_vec], axis=0)
+        for s in with_vec:
+            v = s["_vec"] - mean
+            s["_vec"] = v / (np.linalg.norm(v) or 1)
+    for s in storylines:
+        options, fallback = [], []
+        for o in storylines:
+            if o is s or s["_vec"] is None or o["_vec"] is None:
+                continue
+            sim = float(s["_vec"] @ o["_vec"])
+            fallback.append((sim, o["id"], "Closest topic"))
+            shared = sorted(s["_names"] & o["_names"], key=len, reverse=True)
+            # A shared name alone isn't enough when the stories are about different things.
+            if sim < DOOR_MIN_SIM and (not shared or sim < DOOR_NAME_MIN_SIM):
+                continue
+            lens = set(s["lenses"]) & set(o["lenses"])
+            score = sim + 0.15 * min(2, len(shared)) + 0.04 * (o["layer"] == s["layer"]) + 0.01 * min(o["heat"], 10)
+            if shared:
+                why = f"Also {shared[0]}"
+            elif lens:
+                why = f"More on {sorted(lens)[0]}"
+            elif o["layer"] == s["layer"]:
+                why = f"More in {config.LAYERS.get(o['layer'], 'this area')}"
+            else:
+                why = "Close topic"
+            options.append((score, o["id"], why))
+        options.sort(reverse=True)
+        # Never a dead end: when few stories are close, the nearest others fill in.
+        picked = options[:DOORS]
+        taken = {i for _, i, _ in picked}
+        picked += [f for f in sorted(fallback, reverse=True) if f[1] not in taken][:max(0, DOORS_MIN - len(picked))]
+        s["doors"] = [{"id": i, "why": why} for _, i, why in picked]
+    for s in storylines:
+        del s["_vec"], s["_names"]
 
 
 def build_models(conn: sqlite3.Connection, outlets: dict) -> dict:

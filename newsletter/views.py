@@ -15,7 +15,7 @@ from .triage import passes
 
 BUCKET_HOURS = 6
 # Each storyline links to this many others, the closest first, so the reader can keep going deeper.
-DOORS = 6
+DOORS = 12
 DOORS_MIN = 4
 # Below this similarity a link is only offered when it shares a named company, person or product.
 # Measured after removing what all of today's stories have in common ("it's AI news").
@@ -248,55 +248,72 @@ def link_doors(storylines: list[dict]) -> None:
         del s["_vec"], s["_names"]
 
 
+def launch_date(rows) -> str:
+    """The first day two outlets agree on (within two days of each other), so one site with a
+    wrong date can't move a launch a month early. A launch only one outlet covered keeps its date."""
+    times = sorted({(datetime.fromisoformat(r["published"]), r["domain"] or r["publisher"]) for r in rows})
+    for t, who in times:
+        if any(o != who and timedelta(0) <= u - t <= timedelta(days=2) for u, o in times):
+            return t.isoformat(timespec="minutes")[:16]
+    return times[0][0].isoformat(timespec="minutes")[:16]
+
+
+VERSION_RE = re.compile(r"^(.*?)[- ]?[A-Za-z]?(\d+)(?:\.\d+)*")
+
+
+def drop_stale(releases: list[dict]) -> list[dict]:
+    """Hide "launches" of an older major version after a newer one already shipped ("Opus 4.8"
+    after "Opus 5.5"): those are old articles re-dated by a republishing site."""
+    def parts(m):
+        hit = VERSION_RE.match(m["model"])
+        return (hit.group(1).strip().lower(), int(hit.group(2))) if hit else (m["model"].lower(), 0)
+    keep = []
+    for m in releases:
+        fam, major = parts(m)
+        if not any(parts(o)[0] == fam and parts(o)[1] > major and o["date"] < m["date"] for o in releases):
+            keep.append(m)
+    return keep
+
+
 def build_models(conn: sqlite3.Connection, outlets: dict) -> dict:
-    since = (now_utc() - timedelta(days=config.MODELS_WINDOW_DAYS)).isoformat()
-    rows = conn.execute(
-        "SELECT r.*, s.first_seen, s.kicker FROM releases r JOIN stories s ON s.id = r.story_id "
-        "WHERE r.is_model = 1 AND s.first_seen >= ? ORDER BY s.first_seen", (since,),
-    ).fetchall()
+    """Every tracked lab with its releases, newest first; the lab with the latest release on top."""
+    labs = {lab["name"]: lab for lab in config.LABS}
+    by_model = defaultdict(list)
+    for r in conn.execute("SELECT * FROM launches ORDER BY published"):
+        by_model[(r["provider"], r["model_key"])].append(r)
 
-    def deep(i):
-        o = outlets.get(i["domain"])
-        return o["deep"] if o else config.DEFAULT_OUTLET_PRIOR
+    def rank(r):
+        # The lab's own post first, then the most trusted outlet, then whoever was earliest.
+        own = any(r["domain"] == d or (r["domain"] or "").endswith("." + d) for d in labs[r["provider"]]["sites"])
+        o = outlets.get(r["domain"])
+        trust = o["deep"] if o else config.OUTLET_PRIOR.get(r["domain"], config.DEFAULT_OUTLET_PRIOR)
+        return (own, trust, -datetime.fromisoformat(r["published"]).timestamp())
 
-    # The same launch is often several stories (announcement, review, benchmarks): merge them.
-    merged = {}
-    for r in rows:
-        key = (r["provider"], " ".join(r["model"].lower().replace("-", " ").split()))
-        items = conn.execute("SELECT * FROM items WHERE story_id = ?", (r["story_id"],)).fetchall()
-        m = merged.setdefault(key, {
-            "provider": r["provider"], "model": r["model"], "open": bool(r["open_weights"]),
-            "what": r["what"], "modality": r["modality"], "date": r["first_seen"][:16],
-            "country": config.COUNTRY.get(r["provider"], ""), "items": [],
+    releases = defaultdict(list)
+    for (provider, key), rows in by_model.items():
+        date = launch_date(rows)
+        # The link comes from coverage of the launch itself, not from a site that dated it wrongly.
+        near = [r for r in rows if abs(datetime.fromisoformat(r["published"]) - datetime.fromisoformat(date + ":00+00:00")) <= timedelta(days=3)]
+        best = max(near or rows, key=rank)
+        # The most common spelling is the name shown ("GPT-6.2 Sol", not "gpt-6.2 sol").
+        names = defaultdict(int)
+        for r in rows:
+            names[r["model"]] += 1
+        releases[provider].append({
+            "key": f"{provider}|{key}", "model": max(names, key=names.get), "open": bool(best["open_weights"]),
+            "date": date, "outlets": len({r["domain"] or r["publisher"] for r in rows}),
+            "url": best["url"], "source": best["publisher"] or best["domain"], "headline": best["title"],
         })
-        m["items"] += items
-    releases = []
-    for m in merged.values():
-        items = m.pop("items")
-        best = max(items, key=deep) if items else None
-        m["outlets"] = len({i["domain"] for i in items})
-        m["url"] = best["url"] if best else None
-        m["source"] = best["publisher"] if best else None
-        releases.append(m)
-    releases.sort(key=lambda m: m["date"], reverse=True)
-
-    closed = [m for m in releases if not m["open"]]
-    frontier = [{"lab": lab, "country": config.COUNTRY.get(lab, ""),
-                 "releases": [m for m in closed if m["provider"] == lab]} for lab in config.FRONTIER_LABS]
-    other_closed = [m for m in closed if m["provider"] not in config.FRONTIER_LABS]
-    # Labs with news first, most recent on top; quiet labs keep their fixed order below.
-    frontier.sort(key=lambda l: l["releases"][0]["date"] if l["releases"] else "", reverse=True)
+    result = []
+    for name in labs:
+        rel = sorted(drop_stale(releases.get(name, [])), key=lambda m: m["date"], reverse=True)
+        result.append({"lab": name, "country": config.COUNTRY.get(name, ""), "releases": rel,
+                       "open": bool(rel) and all(m["open"] for m in rel)})
+    result.sort(key=lambda l: l["releases"][0]["date"] if l["releases"] else "", reverse=True)
 
     trending = [{
         "rank": t["rank"], "id": t["model_id"], "org": t["org"], "name": t["model_id"].split("/", 1)[1],
         "likes": t["likes"], "downloads": t["downloads"], "score": t["trending"], "task": t["task"],
         "created": (t["created"] or "")[:16], "country": config.COUNTRY.get(t["org"].lower(), ""),
     } for t in conn.execute("SELECT * FROM hf_trending ORDER BY rank")]
-    return {
-        "window_days": config.MODELS_WINDOW_DAYS,
-        "frontier": frontier,
-        "other_closed": other_closed,
-        "open": [m for m in releases if m["open"]],
-        "trending": trending,
-        "timeline": releases,
-    }
+    return {"labs": result, "trending": trending, "search_days": config.LAUNCH_SEARCH_DAYS}
